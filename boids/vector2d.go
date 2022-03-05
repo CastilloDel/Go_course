@@ -31,8 +31,9 @@ func (vector Vector2D) DivisionValue(value float64) Vector2D {
 	return Vector2D{x: vector.x / value, y: vector.y / value}
 }
 
-func (vector Vector2D) limit(lower, upper float64) Vector2D {
-	return Vector2D{x: math.Max(vector.x, lower), y: math.Min(vector.y, lower)}
+func (vector Vector2D) normalize() Vector2D {
+	factor := math.Sqrt(math.Pow(vector.x, 2) + math.Pow(vector.y, 2))
+	return Vector2D{x: vector.x / factor, y: vector.y / factor}
 }
 
 func (v1 Vector2D) GetDistance(v2 Vector2D) float64 {
