@@ -58,7 +58,7 @@ func (boid *Boid) borderBounce(position, maxBorderPosition float64) float64 {
 func (boid *Boid) moveOne() {
 	acceleration := boid.calcAcceleration()
 	rWLock.Lock()
-	boid.velocity = boid.velocity.Add(acceleration).normalize()
+	boid.velocity = boid.velocity.Add(acceleration).limit(-1, 1)
 	boidMap[int(boid.position.x)][int(boid.position.y)] = -1
 	boid.position = boid.position.Add(boid.velocity)
 	boidMap[int(boid.position.x)][int(boid.position.y)] = boid.id
