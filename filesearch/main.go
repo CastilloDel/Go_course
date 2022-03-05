@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -36,8 +37,12 @@ func fileSearch(directory string, filename string) {
 }
 
 func main() {
+	if len(os.Args) != 3 {
+		fmt.Println("Use: " + os.Args[0] + " <directory> <file name to search>")
+		return
+	}
 	waitgroup.Add(1)
-	go fileSearch("/home/daniel", "README.md")
+	go fileSearch(os.Args[1], os.Args[2])
 	waitgroup.Wait()
 	for _, file := range matches {
 		fmt.Println("Matched", file)
