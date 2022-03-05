@@ -14,30 +14,40 @@ type Boid struct {
 
 func (boid *Boid) calcAcceleration() Vector2D {
 	upper, lower := boid.position.AddValue(viewRadius), boid.position.AddValue(-viewRadius)
-	meanVelocity := Vector2D{0, 0}
+	meanVelocity, meanPosition := Vector2D{0, 0}, Vector2D{0, 0}
 	count := 0.0
+
+	lock.Lock()
 	for i := math.Max(lower.x, 0); i <= math.Min(upper.x, screenWidth); i++ {
 		for j := math.Max(lower.y, 0); j <= math.Min(upper.y, screenHeight); j++ {
 			if otherBoidId := boidMap[int(i)][int(j)]; otherBoidId != -1 && otherBoidId != boid.id {
 				if dist := boids[otherBoidId].position.GetDistance(boid.position); dist < viewRadius {
 					count++
 					meanVelocity = meanVelocity.Add(boids[otherBoidId].velocity)
+					meanPosition = meanPosition.Add(boids[otherBoidId].position)
 				}
 			}
 		}
 	}
+	lock.Unlock()
 
 	acceleration := Vector2D{0, 0}
 	if count > 0 {
-		meanVelocity = meanVelocity.DivisionValue(count)
-		acceleration = meanVelocity.Subtract(boid.velocity).MultiplyValue(adjustmentRate)
+		meanVelocity, meanPosition = meanVelocity.DivisionValue(count), meanPosition.DivisionValue(count)
+		accelerationAlignment := meanVelocity.Subtract(boid.velocity).MultiplyValue(adjustmentRate)
+		accelerationCohesion := meanPosition.Subtract(boid.position).MultiplyValue(adjustmentRate)
+		acceleration = accelerationAlignment.Add(accelerationCohesion)
 	}
 	return acceleration
 }
 
 func (boid *Boid) moveOne() {
 	acceleration := boid.calcAcceleration()
+	lock.Lock()
 	boid.velocity = boid.velocity.Add(acceleration).normalize()
+	boidMap[int(boid.position.x)][int(boid.position.y)] = -1
+	boid.position = boid.position.Add(boid.velocity)
+	boidMap[int(boid.position.x)][int(boid.position.y)] = boid.id
 	next := boid.position.Add(boid.velocity)
 	if next.x >= screenWidth || next.x < 0 {
 		boid.velocity = Vector2D{x: -boid.velocity.x, y: boid.velocity.y}
@@ -45,9 +55,7 @@ func (boid *Boid) moveOne() {
 	if next.y >= screenHeight || next.y < 0 {
 		boid.velocity = Vector2D{x: boid.velocity.x, y: -boid.velocity.y}
 	}
-	boidMap[int(boid.position.x)][int(boid.position.y)] = -1
-	boid.position = boid.position.Add(boid.velocity)
-	boidMap[int(boid.position.x)][int(boid.position.y)] = boid.id
+	lock.Unlock()
 }
 
 func (boid *Boid) start() {
