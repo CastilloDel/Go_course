@@ -1,4 +1,4 @@
-module go_course
+module github.com/CastilloDel/Go_course
 
 go 1.17
 
