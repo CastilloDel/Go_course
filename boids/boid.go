@@ -14,7 +14,7 @@ type Boid struct {
 
 func (boid *Boid) calcAcceleration() Vector2D {
 	upper, lower := boid.position.AddValue(viewRadius), boid.position.AddValue(-viewRadius)
-	meanVelocity, meanPosition := Vector2D{0, 0}, Vector2D{0, 0}
+	meanVelocity, meanPosition, separation := Vector2D{0, 0}, Vector2D{0, 0}, Vector2D{0, 0}
 	count := 0.0
 
 	rWLock.RLock()
@@ -25,6 +25,7 @@ func (boid *Boid) calcAcceleration() Vector2D {
 					count++
 					meanVelocity = meanVelocity.Add(boids[otherBoidId].velocity)
 					meanPosition = meanPosition.Add(boids[otherBoidId].position)
+					separation = separation.Add(boid.position.Subtract(boids[otherBoidId].position).DivisionValue(dist))
 				}
 			}
 		}
@@ -34,9 +35,10 @@ func (boid *Boid) calcAcceleration() Vector2D {
 	acceleration := Vector2D{0, 0}
 	if count > 0 {
 		meanVelocity, meanPosition = meanVelocity.DivisionValue(count), meanPosition.DivisionValue(count)
-		accelerationAlignment := meanVelocity.Subtract(boid.velocity).MultiplyValue(adjustmentRate)
-		accelerationCohesion := meanPosition.Subtract(boid.position).MultiplyValue(adjustmentRate)
-		acceleration = accelerationAlignment.Add(accelerationCohesion)
+		accelerationAlignment := meanVelocity.Subtract(boid.velocity)
+		accelerationCohesion := meanPosition.Subtract(boid.position)
+		acceleration = accelerationAlignment.Add(accelerationCohesion).Add(separation)
+		acceleration = acceleration.MultiplyValue(adjustmentRate)
 	}
 	return acceleration
 }
